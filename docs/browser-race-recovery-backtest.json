@@ -1,0 +1,167 @@
+{
+  "scope": "Local Edge browser session closure after release; server remains alive. Not OS process death or live FOMO performance.",
+  "planned": 48,
+  "runs_per_cell": 1,
+  "seed_start": 180000,
+  "competitors": [
+    1,
+    3
+  ],
+  "faults": [
+    "none",
+    "stale",
+    "replayed",
+    "delayed"
+  ],
+  "recovery": "Fresh replacement buyer session and fresh ownership evidence; no release replay.",
+  "status": "complete",
+  "completed": 48,
+  "runner_errors": 0,
+  "finding_count": 0,
+  "groups": [
+    {
+      "competitors": 1,
+      "fault": "delayed",
+      "interrupted": false,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 1,
+      "fault": "delayed",
+      "interrupted": true,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 1,
+      "fault": "none",
+      "interrupted": false,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 1,
+      "fault": "none",
+      "interrupted": true,
+      "final_outcomes": {
+        "competitor_capture": 2,
+        "verified": 1
+      }
+    },
+    {
+      "competitors": 1,
+      "fault": "replayed",
+      "interrupted": false,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 1,
+      "fault": "replayed",
+      "interrupted": true,
+      "final_outcomes": {
+        "verified": 1,
+        "competitor_capture": 2
+      }
+    },
+    {
+      "competitors": 1,
+      "fault": "stale",
+      "interrupted": false,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 1,
+      "fault": "stale",
+      "interrupted": true,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 3,
+      "fault": "delayed",
+      "interrupted": false,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 3,
+      "fault": "delayed",
+      "interrupted": true,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 3,
+      "fault": "none",
+      "interrupted": false,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 3,
+      "fault": "none",
+      "interrupted": true,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 3,
+      "fault": "replayed",
+      "interrupted": false,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 3,
+      "fault": "replayed",
+      "interrupted": true,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 3,
+      "fault": "stale",
+      "interrupted": false,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    },
+    {
+      "competitors": 3,
+      "fault": "stale",
+      "interrupted": true,
+      "final_outcomes": {
+        "competitor_capture": 3
+      }
+    }
+  ],
+  "first_outcomes": {
+    "unresolved": 36,
+    "competitor_capture": 11,
+    "verified": 1
+  },
+  "final_outcomes": {
+    "competitor_capture": 46,
+    "verified": 2
+  },
+  "fault_cases_blocked": 36,
+  "interrupted_sessions": 24,
+  "false_verified": 0,
+  "release_replays": 0,
+  "transport_disconnects": "Expected during browser closure; not counted by this campaign. Coordinator/server processes stay alive."
+}

@@ -11,11 +11,13 @@ This repository studies username transfer coordination in an offline local simul
 - Ran 11 recovery/evidence cases using spawned processes that exit after release or claim. All cases passed; zero false verified results against the persistent fixture.
 - Published the public repository; initial GitHub CI passed on Windows and Linux.
 - Integrated opt-in strict evidence into the browser runner. Completed 24 Edge browser checks: 6 fresh-evidence cases verified, 18 stale/replayed/delayed cases remained unresolved, zero false verified outcomes. See browser-evidence-backtest.json.
-- Local suite now passes 63 tests; hosted CI for this integration is pending publication.
+- Strict browser integration CI passed on Windows and Linux.
+- Completed 48 browser race/recovery cells with 1/3 competitors and 24 buyer-session closures. All 36 faulty evidence reads blocked eligibility until fresh reconciliation. No release replay or false verification. Final outcomes: 2 verified, 46 competitor captures. See browser-race-recovery-backtest.json.
+- Local suite now passes 65 tests; hosted CI for the combined campaign is pending publication.
 
 ## Next experiments
 
-1. Extend strict browser evidence tests to competitor races and interrupted browser sessions.
+1. Test browser/server process failure and delayed operations that survive worker death, beyond buyer-session closure.
 2. Test recovery after evidence becomes available again.
 3. Expand the holdout sample before considering any policy promotion.
 
