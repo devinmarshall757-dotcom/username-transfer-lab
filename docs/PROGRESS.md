@@ -9,11 +9,13 @@ This repository studies username transfer coordination in an offline local simul
 - Completed a 240-trial frozen adaptive timing pilot on unseen seeds. Kept it experimental because it did not consistently improve contested outcomes.
 - Added opt-in strict ownership evidence to the durable coordinator: request nonce, resource and handle binding, authoritative-source flag, and a maximum evidence age. Cached success is rechecked in strict mode.
 - Ran 11 recovery/evidence cases using spawned processes that exit after release or claim. All cases passed; zero false verified results against the persistent fixture.
-- Added GitHub CI configuration for Windows and Linux. Local checks pass; hosted CI has not run yet.
+- Published the public repository; initial GitHub CI passed on Windows and Linux.
+- Integrated opt-in strict evidence into the browser runner. Completed 24 Edge browser checks: 6 fresh-evidence cases verified, 18 stale/replayed/delayed cases remained unresolved, zero false verified outcomes. See browser-evidence-backtest.json.
+- Local suite now passes 63 tests; hosted CI for this integration is pending publication.
 
 ## Next experiments
 
-1. Exercise strict evidence through the browser adapter, including delayed and stale reads.
+1. Extend strict browser evidence tests to competitor races and interrupted browser sessions.
 2. Test recovery after evidence becomes available again.
 3. Expand the holdout sample before considering any policy promotion.
 

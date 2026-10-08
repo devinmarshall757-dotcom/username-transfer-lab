@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-08",
+  "scope": "24 local Edge browser checks; two runs per strategy per condition; no competitors. Not a platform reliability estimate.",
+  "strategies": [
+    "scheduled",
+    "confirmed",
+    "polling"
+  ],
+  "conditions": [
+    {
+      "fault": "none",
+      "recorded": 6,
+      "summary": {
+        "scheduled": {
+          "initiated": 2,
+          "verified": 2,
+          "competitor_capture": 0,
+          "seller_retained": 0,
+          "unresolved": 0
+        },
+        "confirmed": {
+          "initiated": 2,
+          "verified": 2,
+          "competitor_capture": 0,
+          "seller_retained": 0,
+          "unresolved": 0
+        },
+        "polling": {
+          "initiated": 2,
+          "verified": 2,
+          "competitor_capture": 0,
+          "seller_retained": 0,
+          "unresolved": 0
+        }
+      },
+      "false_verified": 0
+    },
+    {
+      "fault": "stale",
+      "recorded": 6,
+      "summary": {
+        "scheduled": {
+          "initiated": 2,
+          "verified": 0,
+          "competitor_capture": 0,
+          "seller_retained": 0,
+          "unresolved": 2
+        },
+        "confirmed": {
+          "initiated": 2,
+          "verified": 0,
+          "competitor_capture": 0,
+          "seller_retained": 0,
+          "unresolved": 2
+        },
+        "polling": {
+          "initiated": 2,
+          "verified": 0,
+          "competitor_capture": 0,
+          "seller_retained": 0,
+          "unresolved": 2
+        }
+      },
+      "false_verified": 0
+    },
+    {
+      "fault": "replayed",
+      "recorded": 6,
+      "summary": {
+        "scheduled": {
+          "initiated": 2,
+          "verified": 0,
+          "competitor_capture": 0,
+          "seller_retained": 0,
+          "unresolved": 2
+        },
+        "confirmed": {
+          "initiated": 2,
+          "verified": 0,
+          "competitor_capture": 0,
+          "seller_retained": 0,
+          "unresolved": 2
+        },
+        "polling": {
+          "initiated": 2,
+          "verified": 0,
+          "competitor_capture": 0,
+          "seller_retained": 0,
+          "unresolved": 2
+        }
+      },
+      "false_verified": 0
+    },
+    {
+      "fault": "delayed",
+      "recorded": 6,
+      "summary": {
+        "scheduled": {
+          "initiated": 2,
+          "verified": 0,
+          "competitor_capture": 0,
+          "seller_retained": 0,
+          "unresolved": 2
+        },
+        "confirmed": {
+          "initiated": 2,
+          "verified": 0,
+          "competitor_capture": 0,
+          "seller_retained": 0,
+          "unresolved": 2
+        },
+        "polling": {
+          "initiated": 2,
+          "verified": 0,
+          "competitor_capture": 0,
+          "seller_retained": 0,
+          "unresolved": 2
+        }
+      },
+      "false_verified": 0
+    }
+  ],
+  "authority_boundary": "Trusted local HTTP adapter; nonce is local, not a platform attestation.",
+  "reproduce": "python run_browser_lab.py --strict-evidence --evidence-fault FAULT --runs 2 --output artifacts/FRESH_DIRECTORY"
+}

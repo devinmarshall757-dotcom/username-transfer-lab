@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 from browser_lab import LabServer
-from durable_transfer import Coordinator
+from durable_transfer import Coordinator, OwnershipEvidence
 
 
 def request(base, path, data=None):
@@ -36,6 +36,20 @@ class BrowserPlatform:
                 return True, request(self.base, f'/runs/{self.run["id"]}/finish', {})['owner']
         return True, request(self.base, '/runs/' + self.run['id'])['owner']
 
+    def verify_evidence(self, nonce):
+        known, owner = self.verify()
+        if not known:
+            return None
+        observed_at = time.monotonic()
+        fault = getattr(self, 'evidence_fault', 'none') if self.started else 'none'
+        if fault == 'stale':
+            observed_at -= 60
+        if fault == 'delayed':
+            time.sleep(1.1)
+        return OwnershipEvidence(owner, self.resource_key, self.username,
+                                 'previous-request' if fault == 'replayed' else nonce,
+                                 observed_at, True)
+
     def release(self, seller):
         self.started = True
         target = time.time() * 1000 + 150
@@ -59,6 +73,8 @@ class BrowserPlatform:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--strict-evidence', action='store_true')
+    parser.add_argument('--evidence-fault', choices=('none','stale','replayed','delayed'), default='none')
     parser.add_argument('--headed', action='store_true')
     parser.add_argument('--channel', default='msedge')
     parser.add_argument('--runs', type=int, default=3, help='Runs per strategy')
@@ -70,6 +86,8 @@ def main():
     parser.add_argument('--lost-claim-response', action='store_true')
     parser.add_argument('--output', default='artifacts/browser-lab')
     args = parser.parse_args()
+    if args.evidence_fault != 'none' and not args.strict_evidence:
+        parser.error('Evidence fault injection requires --strict-evidence')
     if not 1 <= args.runs <= 100:
         parser.error('runs must be between 1 and 100')
     from playwright.sync_api import sync_playwright
@@ -90,7 +108,7 @@ def main():
                                   'cooldown_ms': args.cooldown_ms, 'lost_claim_response': args.lost_claim_response}
                         run = request(base, '/runs', config)
                         contexts = [browser.new_context() for _ in range(2)]
-                        coordinator = Coordinator(out / 'transactions.sqlite')
+                        coordinator = Coordinator(out / 'transactions.sqlite', require_evidence=args.strict_evidence)
                         try:
                             pages = [context.new_page() for context in contexts]
                             for page, actor in zip(pages, (run['seller'], run['buyer'])):
@@ -99,6 +117,7 @@ def main():
                             coordinator.create(run['id'], run['username'], run['seller'], run['buyer'])
                             request(base, f'/runs/{run["id"]}/arm', {})
                             adapter = BrowserPlatform(base, run, *pages, strategy, args.offset_ms, args.poll_ms, args.seller_error_ms)
+                            adapter.evidence_fault = args.evidence_fault
                             # Existing coordinator owns readiness checks, locks,
                             # intent logging, and ownership-based reconciliation.
                             record = coordinator.run(run['id'], adapter)
@@ -107,9 +126,13 @@ def main():
                             owner = snapshot['owner']
                             outcome = ('verified' if owner == run['buyer'] else 'seller_retained' if owner == run['seller']
                                        else 'unresolved' if owner is None else 'competitor_capture')
-                            if record['state'] != outcome:
+                            observed_outcome = outcome
+                            if record['eligible'] and owner != run['buyer']:
+                                raise RuntimeError('False verified result')
+                            if record['state'] != outcome and not (args.strict_evidence and record['state'] == 'unresolved'):
                                 raise RuntimeError('Final observation differs from coordinator outcome')
-                            results.append({'strategy': strategy, 'outcome': outcome, 'transaction': record,
+                            outcome = record['state']
+                            results.append({'strategy': strategy, 'outcome': outcome, 'observed_outcome': observed_outcome, 'transaction': record,
                                             'server': snapshot, 'buyer_response': pages[1].evaluate('window.claimResult'),
                                             'browser_observations': [p.evaluate('window.observations') for p in pages]})
                             print(f'{strategy}: {outcome} ({run["id"][:8]})', flush=True)
