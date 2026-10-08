@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.sqlite
+*.sqlite-journal
+*.worker.lock
+artifacts/
+.env
+.env.*
+!.env.example
+*.sqlite-wal
+*.sqlite-shm
