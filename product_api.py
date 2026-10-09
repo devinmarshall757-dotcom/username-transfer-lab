@@ -25,7 +25,7 @@ class ProductServer(ThreadingHTTPServer):
                 key.write_text(secrets.token_urlsafe(32), encoding='utf-8')
             token = key.read_text(encoding='utf-8').strip()
         if not re.fullmatch(r'[A-Za-z0-9_-]{24,128}', token):
-            raise ValueError('API key must be 24–128 URL-safe characters')
+            raise ValueError('API key must be 24-128 URL-safe characters')
         self.token = token
         self.coordinator_path = self.directory/'coordinator.sqlite'
         self.platform_path = self.directory/'platform.sqlite'
