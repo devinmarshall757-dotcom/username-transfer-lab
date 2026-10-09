@@ -26,3 +26,6 @@ This repository studies username transfer coordination in an offline local simul
 ## Reproduce
 
 Install `requirements-lab.txt`, then run `python -m unittest -q` and `python recovery_campaign.py`. See README for browser and race studies. Generated reports and databases stay in ignored `artifacts/`; publish selected aggregate evidence with its scope and reproduction command here. This log records completed work rather than scheduled promises of daily updates.
+
+- Built and browser-tested an authenticated loopback product API/dashboard over the durable local fixture. It supports immutable/idempotent creation, authenticated status reads, strict-evidence execution/reconciliation, and recorded transitions. Foreign Host/Origin requests are rejected; runtime keys and databases stay out of Git. This is a single local administrator workspace, not a live FOMO marketplace or payment service.
+- Local suite now passes 75 tests, including seven API integration checks. Headless Edge smoke test passed unlock → create → execute → verified, with the entered access key cleared. Hosted CI for the API commit is pending publication.

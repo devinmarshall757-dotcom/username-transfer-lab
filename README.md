@@ -1,5 +1,13 @@
 # Username transfer feasibility prototype
 
+## Local product API and dashboard
+
+Run `python product_api.py`, then open http://127.0.0.1:8766/. Copy the generated key from `artifacts/product-api/api.key` into the unlock field. The UI clears the entered key and uses an HttpOnly, SameSite=Strict session cookie. Create a transaction with fixture seller/buyer labels, execute it, inspect durable state transitions, and recheck ownership. Existing records survive service restarts. Reusing a transaction ID with different details is rejected.
+
+This is one local administrator workspace, not multi-user marketplace authentication. The adapter is the persistent local fixture; entering a seller label seeds test ownership and does not authenticate an external account. No real money, escrow, or FOMO actions occur. The HTTP service binds only to 127.0.0.1 and rejects foreign Host/Origin headers. It requires a bearer key or local session for transaction access. Do not expose it as a public production service; public deployment needs TLS, user/role authorization, operational limits, and deployment hardening.
+
+API reference: [docs/API.md](docs/API.md). Public build progress: [docs/PROGRESS.md](docs/PROGRESS.md).
+
 ## Browser transfer lab
 
 ### Bounded scheduled retries

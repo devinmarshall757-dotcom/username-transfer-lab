@@ -9,3 +9,5 @@ artifacts/
 !.env.example
 *.sqlite-wal
 *.sqlite-shm
+
+api.key
