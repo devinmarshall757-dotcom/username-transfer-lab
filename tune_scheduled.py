@@ -13,6 +13,7 @@ from durable_transfer import Coordinator
 from lab_watcher import inspect_run
 from run_browser_lab import BrowserPlatform, request
 from retry_policy import RetryBrowserPlatform
+from experiment_director import audit_record
 
 
 OFFSETS = (0, 5, 10, 20, 40, 60)
@@ -71,8 +72,18 @@ def main():
     parser.add_argument('--output',default='artifacts/scheduled-tuning')
     parser.add_argument('--port',type=int,default=0)
     parser.add_argument('--keep-open',action='store_true')
+    parser.add_argument('--seed-start', type=int, help='Fresh holdout seed start for fixed-policy studies')
+    parser.add_argument('--strict-evidence', action='store_true')
+    parser.add_argument('--acquisition-study', action='store_true', help='Strict evidence; fixed 10/20 ms retries versus 40 ms single; fresh seeds and faster competitors')
     parser.add_argument('--retry-study',action='store_true',help='Compare fixed 10 ms with/without retries and 40 ms single claim on new seeds')
     args=parser.parse_args()
+    if args.acquisition_study:
+        args.retry_study = True
+        args.strict_evidence = True
+    if args.seed_start is not None and (args.seed_start < 0 or not args.retry_study):
+        parser.error('--seed-start requires a fixed-policy study and a nonnegative integer')
+    seed_start = args.seed_start if args.seed_start is not None else (200000 if args.acquisition_study else 90000)
+    fixed_policies = ((10,True),(20,True),(40,False)) if args.acquisition_study else ((10,False),(10,True),(40,False))
     if not 1<=args.tuning_runs<=1000 or not 1<=args.validation_runs<=1000:
         parser.error('Run counts must be between 1 and 1000')
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
@@ -86,16 +97,21 @@ def main():
     results=[];current=None;selected=None;status='running';start=time.perf_counter()
     planned=45*args.validation_runs if args.retry_study else 18*args.tuning_runs+18*args.validation_runs
     study_scenarios=dict(SCENARIOS)
-    if args.retry_study:
+    if args.retry_study and not args.acquisition_study:
         study_scenarios['rate_limit']={**SCENARIOS['baseline'],'min_interval_ms':80,'cooldown_ms':75}
         study_scenarios['response_loss']={**SCENARIOS['baseline'],'lost_claim_response':True}
+
+    if args.acquisition_study:
+        study_scenarios = {name: {**config, 'competitor_interval_ms':20} for name, config in SCENARIOS.items()}
+        planned = 27 * args.validation_runs
 
     def checkpoint():
         report={'scope':'Local browser offset tuning and fresh-seed validation; not FOMO measurements',
                 'status':status,'planned':planned,'completed':len(results),'elapsed_seconds':time.perf_counter()-start,
                 'current':current,'selected_offset_ms':selected,'baseline_offset_ms':40,
-                'selection_rule':('Fixed 10 ms single, 10 ms bounded retry, and 40 ms single policies; no selection using these results.' if args.retry_study else 'Clean win rate >=90%; maximize worst contested rate, then mean contested rate, then smaller offset. Validation never changes selection.'),
-                'tuning_seed_start':None if args.retry_study else 10000,'validation_seed_start':90000 if args.retry_study else 50000,'scenarios':study_scenarios,
+                'strict_evidence':args.strict_evidence,
+                'selection_rule':('Fixed 10/20 ms bounded retries and 40 ms single; no selection or promotion using these results.' if args.acquisition_study else 'Fixed 10 ms single, 10 ms bounded retry, and 40 ms single policies; no selection using these results.' if args.retry_study else 'Clean win rate >=90%; maximize worst contested rate, then mean contested rate, then smaller offset. Validation never changes selection.'),
+                'tuning_seed_start':None if args.retry_study else 10000,'validation_seed_start':seed_start if args.retry_study else 50000,'scenarios':study_scenarios,
                 'retry_policy':{'max_attempts':3,'deadline_ms':500,'ownership_checks':'before and after each claim','interval_floor_ms':20} if args.retry_study else None,
                 'groups':groups_for(results),'runner_errors':sum('error' in r for r in results),
                 'settings':'Paired seeds; parameter combinations shuffled per seed; no retries of failed attempts. Browser scheduling remains variable.'}
@@ -118,7 +134,7 @@ def main():
                         config={**study_scenarios[scenario],'seed':seed,'competitor_count':competitors}
                         Config(**config)
                         run=request(base,'/runs',config);result={**current,'id':run['id'],'config':run['config']}
-                        c=Coordinator(out/'transactions.sqlite')
+                        c=Coordinator(out/'transactions.sqlite',require_evidence=args.strict_evidence)
                         try:
                             for page,actor in zip(pages,(run['seller'],run['buyer'])):
                                 page.goto(f'{base}/?run={run["id"]}&actor={actor}')
@@ -133,6 +149,11 @@ def main():
                             watcher=inspect_run(snapshot)
                             if watcher['outcome']!=record['state']:raise RuntimeError('Coordinator/watcher mismatch')
                             result.update(outcome=record['state'],transaction=record,watcher=watcher,server_events=snapshot['events'])
+                            result['independent_findings'] = audit_record(result)
+                            if result['independent_findings']:
+                                raise RuntimeError('Independent audit disagreement')
+                            if record['eligible'] and snapshot['owner'] != run['buyer']:
+                                raise RuntimeError('False verified outcome')
                             if retry:
                                 trace=pages[1].evaluate('window.retryTrace')
                                 result['retry_trace']=trace
@@ -150,16 +171,16 @@ def main():
                         if len(results)%25==0:print(f'{len(results)}/{planned} completed',flush=True)
 
                     if args.retry_study:
-                        selected=10
+                        selected=None if args.acquisition_study else 10
                         write_report(out/'selection.json',{'fixed_before_validation':True,
-                            'policies':[{'offset_ms':10,'retry':False},{'offset_ms':10,'retry':True},{'offset_ms':40,'retry':False}],
-                            'max_attempts':3,'deadline_ms':500,'seed_start':90000})
+                            'policies':[{'offset_ms':offset,'retry':retry} for offset,retry in fixed_policies], 'strict_evidence':args.strict_evidence, 'scenarios':study_scenarios,
+                            'max_attempts':3,'deadline_ms':500,'seed_start':seed_start})
                         for i in range(args.validation_runs):
                             cells=[(scenario,offset,retry,comp) for scenario in study_scenarios
-                                   for offset,retry in ((10,False),(10,True),(40,False)) for comp in (0,1,3)]
-                            random.Random(90000+i).shuffle(cells)
+                                   for offset,retry in fixed_policies for comp in (0,1,3)]
+                            random.Random(seed_start+i).shuffle(cells)
                             for scenario,offset,retry,comp in cells:
-                                trial('retry_validation',scenario,offset,comp,90000+i,retry)
+                                trial('acquisition_validation' if args.acquisition_study else 'retry_validation',scenario,offset,comp,seed_start+i,retry)
                     for i in range(0 if args.retry_study else args.tuning_runs):
                         cells=[(offset,comp) for offset in OFFSETS for comp in (0,1,3)]
                         random.Random(10000+i).shuffle(cells)
